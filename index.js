@@ -5,18 +5,24 @@ const fetch = require('node-fetch');
 async function run() {
   try {
     const filteredCards = await getCardsWithPRAttachments()
-    // core.info(JSON.stringify(filteredCards, undefined, 2))
-    const result = await getCommitsOnCurrentSha()
+    core.info(JSON.stringify(filteredCards, undefined, 2))
+    const pullRequestsOnCurrentSha = await getPullRequestsWithCurrentSha()
 
-    // filteredCards.forEach((card) => {
-    //   const attachments = card.attachments.filter(isPullRequestAttachment)
-    //   const attachment = attachments[0] // TODO: for now, we are only going to listen to the first one
-    //   const prId = attachment.split('/').pop()
-    //   const result = getPullRequestForId(prId)
-    //   core.info(result)
-    // })
-    core.info(JSON.stringify(result, undefined, 2))
-    core.setOutput('time', result);
+    filteredCards.forEach((card) => {
+      const attachments = card.attachments.filter(isPullRequestAttachment)
+      if (attachments.some(attachment => {
+        const prId = attachment.url.split("/").pop()
+        return pullRequestsOnCurrentSha.some(pr => pr.id === parseInt(prId, 10))
+      })) {
+
+      }
+      // const attachment = attachments[0] // TODO: for now, we are only going to listen to the first one
+      // const prId = attachment.split('/').pop()
+      // const result = getPullRequestForId(prId)
+      // core.info(result)
+    })
+    // core.info(JSON.stringify(result, undefined, 2))
+    core.setOutput('time', filteredCards);
   } catch (error) {
     core.setFailed(error.message);
   }
@@ -30,7 +36,7 @@ async function getCardsWithPRAttachments() {
   return cards.filter(card => card.attachments.some(isPullRequestAttachment))
 }
 
-async function getCommitsOnCurrentSha() {
+async function getPullRequestsWithCurrentSha() {
   const owner = github.context.payload.repository.owner.name
   const repo = github.context.payload.repository.name
   const currentSha = github.context.sha
@@ -38,6 +44,15 @@ async function getCommitsOnCurrentSha() {
   const octokit = github.getOctokit(githubToken)
   return await octokit.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: currentSha })
 }
+
+// async function getCommitsOnCurrentSha() {
+//   const owner = github.context.payload.repository.owner.name
+//   const repo = github.context.payload.repository.name
+//   const currentSha = github.context.sha
+//   const githubToken = core.getInput("github_token")
+//   const octokit = github.getOctokit(githubToken)
+//   return await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
+// }
 
 // async function getPullRequestForId(id) {
 //   const owner = github.context.payload.repository.owner.name
