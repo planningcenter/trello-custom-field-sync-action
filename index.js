@@ -9,6 +9,7 @@ async function run() {
     const octokit = github.getOctokit(githubToken)
     const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/cards?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}&attachments=true`)
     const cards = await response.json().filter(card => card.attachments.some(attachment => attachment.url.include("github.com")))
+    core.info("filtering cards")
     core.info(JSON.stringify(cards, undefined, 2))
     const owner = github.context.payload.repository.owner.name
     const repo = github.context.payload.repository.name
