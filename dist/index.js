@@ -21,14 +21,12 @@ async function run() {
       const attachments = card.attachments.filter(isPullRequestAttachment)
       if (attachments.some(attachment => {
         const prId = attachment.url.split("/").pop()
-        return pullRequestsOnCurrentSha.some(pr => pr.id === parseInt(prId, 10))
+        core.info(JSON.stringify(pullRequestsOnCurrentSha, undefined, 2))
+        core.info(prId)
+        return pullRequestsOnCurrentSha.some(pr => pr.number === parseInt(prId, 10))
       })) {
         updateCustomFieldToStaging({ card, customFieldId })
       }
-      // const attachment = attachments[0] // TODO: for now, we are only going to listen to the first one
-      // const prId = attachment.split('/').pop()
-      // const result = getPullRequestForId(prId)
-      // core.info(result)
     })
     // core.info(JSON.stringify(result, undefined, 2))
     core.setOutput('time', filteredCards);
