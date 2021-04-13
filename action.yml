@@ -1,10 +1,12 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: 'Trello Staging Sync'
+description: 'Syncs the environment to staging when the branch attached to a card is deployed to staging'
 inputs:
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
+  trello_key:
+    description: 'key from Trello (https://trello.com/app-key)'
     required: true
-    default: '1000'
+  trello_token:
+    description: 'token from Trello (https://trello.com/app-key)'
+    required: true
 outputs:
   time: # output will be available to future steps
     description: 'The message to output'
