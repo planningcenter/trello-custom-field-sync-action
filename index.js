@@ -12,6 +12,7 @@ async function run() {
     core.debug({ result: JSON.stringify(result, undefined, 2) })
     core.setOutput('time', result);
   } catch (error) {
+    core.info({ error })
     core.setFailed(error.message);
   }
 }
