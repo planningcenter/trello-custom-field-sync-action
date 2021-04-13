@@ -14,7 +14,7 @@ async function run() {
     const currentSha = github.context.sha
     const githubToken = core.getInput("github_token")
     const octokit = github.getOctokit(githubToken)
-    const cards = fetch(`https://api.trello.com/1/boards/AY19B6gE/cards?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`)
+    const cards = await fetch(`https://api.trello.com/1/boards/AY19B6gE/cards?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`)
     core.info(JSON.stringify(cards, undefined, 2))
     const owner = github.context.payload.repository.owner.name
     const repo = github.context.payload.repository.name
