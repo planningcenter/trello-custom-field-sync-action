@@ -4,19 +4,17 @@ const fetch = require('node-fetch');
 
 async function run() {
   try {
-    const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/cards?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}&attachments=true`)
-    const owner = github.context.payload.repository.owner.name
-    const repo = github.context.payload.repository.name
-    const cards = await response.json()
-    const filteredCards = cards.filter(card => card.attachments.some(attachment => attachment.url.includes(`github.com/${owner}/${repo}/pull`)))
-    core.info("filtering cards")
+    const filteredCards = getCardsWithPRAttachments()
     core.info(JSON.stringify(filteredCards, undefined, 2))
-    core.info(filteredCards.length)
-    const currentSha = github.context.sha
-    const githubToken = core.getInput("github_token")
-    const octokit = github.getOctokit(githubToken)
-    const result = await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
-    core.info(JSON.stringify(result, undefined, 2))
+    const result = getCommitsOnCurrentSha()
+
+    // filteredCards.forEach((card) => {
+    //   const attachments = card.attachments.filter(isPullRequestAttachment)
+    //   const attachment = attachments[0] // TODO: for now, we are only going to listen to the first one
+    //   const prId = attachment.split('/').pop()
+    //   const result = getPullRequestForId(prId)
+    //   core.info(result)
+    // })
     core.setOutput('time', result);
   } catch (error) {
     core.setFailed(error.message);
@@ -24,3 +22,33 @@ async function run() {
 }
 
 run();
+
+async function getCardsWithPRAttachments() {
+  const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/cards?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}&attachments=true`)
+  const cards = await response.json()
+  return cards.filter(card => card.attachments.some(isPullRequestAttachment))
+}
+
+async function getCommitsOnCurrentSha() {
+  const owner = github.context.payload.repository.owner.name
+  const repo = github.context.payload.repository.name
+  const currentSha = github.context.sha
+  const githubToken = core.getInput("github_token")
+  const octokit = github.getOctokit(githubToken)
+  return await octokit.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: currentSha })
+}
+
+// async function getPullRequestForId(id) {
+//   const owner = github.context.payload.repository.owner.name
+//   const repo = github.context.payload.repository.name
+//   const currentSha = github.context.sha
+//   const githubToken = core.getInput("github_token")
+//   const octokit = github.getOctokit(githubToken)
+//   return await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
+// }
+
+function isPullRequestAttachment(attachment) {
+  const owner = github.context.payload.repository.owner.name
+  const repo = github.context.payload.repository.name
+  return attachment.url.includes(`github.com/${owner}/${repo}/pull`)
+}
