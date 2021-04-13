@@ -16,7 +16,7 @@ async function run() {
         const prId = attachment.url.split("/").pop()
         return pullRequestsOnCurrentSha.some(pr => pr.id === parseInt(prId, 10))
       })) {
-
+        updateCustomFieldToStaging({ card, customFieldId })
       }
       // const attachment = attachments[0] // TODO: for now, we are only going to listen to the first one
       // const prId = attachment.split('/').pop()
@@ -39,9 +39,14 @@ async function getCardsWithPRAttachments() {
 }
 
 async function getEnvironmentCustomFieldId() {
-  const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/customFields?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}&attachments=true`)
+  const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/customFields?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`)
   const customFields = await response.json()
-  return customFields
+  const environmentCustomField = customFields.find(({ name}) => name === "Environment")
+  return environmentCustomField.id
+}
+
+async function updateCustomFieldToStaging({ card, customFieldId }) {
+  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldId}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", data: { value: "Staging" } })
 }
 
 async function getPullRequestsWithCurrentSha() {
