@@ -4,9 +4,9 @@ const fetch = require('node-fetch');
 
 async function run() {
   try {
-    const filteredCards = getCardsWithPRAttachments()
+    const filteredCards = await getCardsWithPRAttachments()
     core.info(JSON.stringify(filteredCards, undefined, 2))
-    const result = getCommitsOnCurrentSha()
+    const result = await getCommitsOnCurrentSha()
 
     // filteredCards.forEach((card) => {
     //   const attachments = card.attachments.filter(isPullRequestAttachment)
