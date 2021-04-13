@@ -7,7 +7,8 @@ async function run() {
     const githubToken = core.getInput("github_token")
     const octokit = github.getOctokit(githubToken)
     core.debug({ payload: github.context.payload })
-    const result = await octokit.commits.commits(github.repository, { sha: currentSha })
+    const [owner, repo] = github.repository.split("/")
+    const result = await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
     core.debug({ result: JSON.stringify(result, undefined, 2) })
     core.setOutput('time', result);
   } catch (error) {
