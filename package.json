@@ -1,7 +1,7 @@
 {
-  "name": "javascript-action",
+  "name": "trello-sync-staging",
   "version": "1.0.0",
-  "description": "JavaScript Action Template",
+  "description": "A github action to sync PRs/branches on staging to have the custom field on Trello",
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
@@ -20,10 +20,6 @@
   ],
   "author": "",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/actions/javascript-action/issues"
-  },
-  "homepage": "https://github.com/actions/javascript-action#readme",
   "dependencies": {
     "@actions/core": "^1.2.7",
     "@actions/github": "^4.0.0"
