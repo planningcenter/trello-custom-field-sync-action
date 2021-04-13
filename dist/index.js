@@ -14,13 +14,11 @@ async function run() {
     const currentSha = github.context.sha
     const githubToken = core.getInput("github_token")
     const octokit = github.getOctokit(githubToken)
-    core.info(`key: ${core.getInput("trello_key").replace("4d56920", "different")}`)
     const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/cards?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}&attachments=true`)
-    const cards = await response.text()
+    const cards = await response.json()
     core.info(JSON.stringify(cards, undefined, 2))
     const owner = github.context.payload.repository.owner.name
     const repo = github.context.payload.repository.name
-    // const [owner, repo] = (github.context.repository || "/").split("/")
     const result = await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
     core.info(JSON.stringify(result, undefined, 2))
     core.setOutput('time', JSON.stringify(result, undefined, 2));
