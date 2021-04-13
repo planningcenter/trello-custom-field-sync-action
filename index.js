@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 async function run() {
   try {
     const filteredCards = await getCardsWithPRAttachments()
-    core.info(JSON.stringify(filteredCards, undefined, 2))
+    // core.info(JSON.stringify(filteredCards, undefined, 2))
     const result = await getCommitsOnCurrentSha()
 
     // filteredCards.forEach((card) => {
@@ -15,6 +15,7 @@ async function run() {
     //   const result = getPullRequestForId(prId)
     //   core.info(result)
     // })
+    core.info(JSON.stringify(result, undefined, 2))
     core.setOutput('time', result);
   } catch (error) {
     core.setFailed(error.message);
