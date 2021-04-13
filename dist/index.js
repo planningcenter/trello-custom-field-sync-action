@@ -10,13 +10,13 @@ const github = __nccwpck_require__(438);
 
 async function run() {
   try {
-    const currentSha = github.sha
+    const currentSha = github.context.sha
     core.info(currentSha)
     const githubToken = core.getInput("github_token")
     const octokit = github.getOctokit(githubToken)
     core.info(JSON.stringify(github.context.payload, undefined, 2))
-    core.info(github.repository)
-    const [owner, repo] = (github.repository || "/").split("/")
+    core.info(github.context.repository)
+    const [owner, repo] = (github.context.repository || "/").split("/")
     const result = await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
     core.info(JSON.stringify(result, undefined, 2))
     core.setOutput('time', repo);
