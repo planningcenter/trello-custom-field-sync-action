@@ -5,7 +5,7 @@ async function run() {
   try {
     const currentSha = github.sha
     const githubToken = core.getInput("github_token")
-    const octokit = github.getOctokit(githubToken)
+    // const octokit = github.getOctokit(githubToken)
     core.debug({ payload: github.context.payload })
     const [owner, repo] = github.repository.split("/")
     // const result = await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
