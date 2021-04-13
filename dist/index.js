@@ -11,6 +11,7 @@ const github = __nccwpck_require__(438);
 async function run() {
   try {
     const currentSha = github.sha
+    core.debug(currentSha)
     const githubToken = core.getInput("github_token")
     // const octokit = github.getOctokit(githubToken)
     core.debug(JSON.stringify(github.context.payload, undefined, 2))
