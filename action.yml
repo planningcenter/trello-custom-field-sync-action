@@ -7,6 +7,9 @@ inputs:
   trello_token:
     description: 'token from Trello (https://trello.com/app-key)'
     required: true
+  github_token:
+    description: 'token from Github (use secrets.GITHUB_TOKEN)'
+    required: true
 outputs:
   time: # output will be available to future steps
     description: 'The message to output'
