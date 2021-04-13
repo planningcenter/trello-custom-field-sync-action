@@ -11,9 +11,11 @@ const fetch = __nccwpck_require__(467);
 
 async function run() {
   try {
+    const customFieldId = await getEnvironmentCustomFieldId()
+    core.info(JSON.stringify(customFieldId, undefined, 2))
     const filteredCards = await getCardsWithPRAttachments()
-    core.info(JSON.stringify(filteredCards, undefined, 2))
-    const pullRequestsOnCurrentSha = await getPullRequestsWithCurrentSha()
+    // core.info(JSON.stringify(filteredCards, undefined, 2))
+    const { data: pullRequestsOnCurrentSha } = await getPullRequestsWithCurrentSha()
 
     filteredCards.forEach((card) => {
       const attachments = card.attachments.filter(isPullRequestAttachment)
@@ -41,6 +43,12 @@ async function getCardsWithPRAttachments() {
   const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/cards?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}&attachments=true`)
   const cards = await response.json()
   return cards.filter(card => card.attachments.some(isPullRequestAttachment))
+}
+
+async function getEnvironmentCustomFieldId() {
+  const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/customFields?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}&attachments=true`)
+  const customFields = await response.json()
+  return customFields
 }
 
 async function getPullRequestsWithCurrentSha() {
