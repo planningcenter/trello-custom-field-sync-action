@@ -6,18 +6,15 @@ async function run() {
   try {
     const stagingCustomFieldItem = await getStagingCustomFieldItem()
     const filteredCards = await getCardsWithPRAttachments()
-    const {
-      data: pullRequestsOnCurrentSha,
-    } = await getPullRequestsWithCurrentSha()
+    const { data: pullRequestsOnCurrentSha } = await getPullRequestsWithCurrentSha()
 
     filteredCards.forEach(async (card) => {
-      setCardToStagingIfOnStaging({
+      setCardCustomFieldValue({
         card,
         prs: pullRequestsOnCurrentSha,
         customFieldItem: stagingCustomFieldItem,
       })
     })
-    core.setOutput("time", filteredCards)
   } catch (error) {
     core.setFailed(error.message)
   }
@@ -34,46 +31,35 @@ async function getCardsWithPRAttachments() {
 }
 
 async function getEnvironmentCustomField() {
-  const response = await trelloFetch(
-    `boards/${core.getInput("trello_board_id")}/customFields`,
-  )
+  const response = await trelloFetch(`boards/${core.getInput("trello_board_id")}/customFields`)
   const customFields = await response.json()
-  return customFields.find(
-    ({ name }) => name === core.getInput("trello_custom_field_name"),
-  )
+  return customFields.find(({ name }) => name === core.getInput("trello_custom_field_name"))
 }
 
 async function getStagingCustomFieldItem() {
   const customField = await getEnvironmentCustomField()
   return customField.options.find(
-    (option) =>
-      Object.values(option.value)[0] ===
-      core.getInput("trello_custom_field_value"),
+    (option) => Object.values(option.value)[0] === core.getInput("trello_custom_field_value"),
   )
 }
 
-async function setCardToStagingIfOnStaging({ card, prs, customFieldItem }) {
+async function setCardCustomFieldValue({ card, prs, customFieldItem }) {
   const attachments = card.attachments.filter(isPullRequestAttachment)
   const attachmentIsAMatchedPR = attachments.some((attachment) => {
     const prId = parseInt(attachment.url.split("/").pop(), 10)
     return prs.some((pr) => pr.number === prId)
   })
-  const body = attachmentIsAMatchedPR
-    ? { idValue: customFieldItem.id }
-    : { idValue: "", value: "" }
+  const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
 
   return await updateCustomFieldToStaging({ card, customFieldItem, body })
 }
 
 async function updateCustomFieldToStaging({ card, customFieldItem, body }) {
-  return await trelloFetch(
-    `cards/${card.id}/customField/${customFieldItem.idCustomField}/item`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  )
+  return await trelloFetch(`cards/${card.id}/customField/${customFieldItem.idCustomField}/item`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
 }
 
 async function getPullRequestsWithCurrentSha() {

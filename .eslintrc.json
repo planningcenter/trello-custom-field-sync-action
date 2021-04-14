@@ -19,6 +19,7 @@
       "error",
       {
         "trailingComma": "all",
+        "printWidth": 100,
         "semi": false
       }
     ]
