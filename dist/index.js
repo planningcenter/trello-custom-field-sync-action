@@ -52,7 +52,7 @@ async function getEnvironmentCustomFieldId() {
 
 async function updateCustomFieldToStaging({ card, customFieldId }) {
   core.info(`Putting: ${card.id}, ${customFieldId}`)
-  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldId}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", data: { value: "Staging" } })
+  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldId}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", body: JSON.stringify({ value: { string: "Staging" } }) })
 }
 
 async function getPullRequestsWithCurrentSha() {
