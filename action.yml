@@ -13,9 +13,6 @@ inputs:
   trello_board_id:
     description: 'Id of the board to sync with. Can be found in the URL of the main board: (ex. trello.com/b/{ID}/your-board-name)'
     required: true
-outputs:
-  time: # output will be available to future steps
-    description: 'The message to output'
 runs:
   using: 'node12'
   main: 'dist/index.js'
