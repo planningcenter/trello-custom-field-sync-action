@@ -40,12 +40,15 @@ async function getEnvironmentCustomFieldId() {
   const response = await fetch(`https://api.trello.com/1/boards/AY19B6gE/customFields?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`)
   const customFields = await response.json()
   const environmentCustomField = customFields.find(({ name}) => name === "Environment")
+  core.info(JSON.stringify(environmentCustomField, undefined, 2))
   return environmentCustomField.id
 }
 
 async function updateCustomFieldToStaging({ card, customFieldId }) {
+  core.info(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldId}/item`)
   core.info(`Putting: ${card.id}, ${customFieldId}`)
-  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldId}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", body: JSON.stringify({ value: { text: "Staging" }}) })
+  // core.info(JSON.stringify(card, undefined, 2))
+  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldId}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", body: JSON.stringify({ IdValue: "Staging" }) })
 }
 
 async function getPullRequestsWithCurrentSha() {
