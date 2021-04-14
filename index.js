@@ -7,7 +7,6 @@ async function run() {
     const commits = await findCommitsFromShaToMaster()
     const stagingCustomFieldItem = await getStagingCustomFieldItem()
     const filteredCards = await getCardsWithPRAttachments()
-    log(filteredCards[0])
     filteredCards.forEach(async (card) => {
       setCardCustomFieldValue({
         card,
@@ -53,7 +52,18 @@ async function setCardCustomFieldValue({ card, commits, customFieldItem }) {
   const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
 
   if (!attachmentIsAMatchedPR && core.getInput("add_only")) return
-  core.info(`syncing card: ${card.name} \n${attachmentIsAMatchedPR ? "adding" : "removing"}`)
+  log(`syncing card: ${card.name}`)
+
+  const customFieldItemsResponse = await trelloFetch(`cards/${card.id}/customFieldItems`)
+  const customFieldItems = await customFieldItemsResponse.json()
+  const alreadyHasEnvironmentSet = customFieldItems.some(
+    ({ idCustomField }) => customFieldItem.idCustomField === idCustomField,
+  )
+  if (alreadyHasEnvironmentSet) {
+    log("already set")
+    return
+  }
+  log(attachmentIsAMatchedPR ? "adding" : "removing")
   return await updateCustomFieldToStaging({ card, customFieldItem, body })
 }
 
