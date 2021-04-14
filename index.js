@@ -10,15 +10,15 @@ async function run() {
     // core.info(JSON.stringify(filteredCards, undefined, 2))
     const { data: pullRequestsOnCurrentSha } = await getPullRequestsWithCurrentSha()
 
-    filteredCards.forEach((card) => {
+    filteredCards.forEach(async (card) => {
       const attachments = card.attachments.filter(isPullRequestAttachment)
       if (attachments.some(attachment => {
         const prId = attachment.url.split("/").pop()
-        core.info(JSON.stringify(pullRequestsOnCurrentSha, undefined, 2))
-        core.info(prId)
         return pullRequestsOnCurrentSha.some(pr => pr.number === parseInt(prId, 10))
       })) {
-        updateCustomFieldToStaging({ card, customFieldId })
+        const result = await updateCustomFieldToStaging({ card, customFieldId })
+        const json = await result.text()
+        core.info(json)
       }
     })
     // core.info(JSON.stringify(result, undefined, 2))
@@ -45,7 +45,7 @@ async function getEnvironmentCustomFieldId() {
 
 async function updateCustomFieldToStaging({ card, customFieldId }) {
   core.info(`Putting: ${card.id}, ${customFieldId}`)
-  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldId}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", body: JSON.stringify({ value: { string: "Staging" } }) })
+  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldId}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", body: JSON.stringify({ value: { text: "Staging" }}) })
 }
 
 async function getPullRequestsWithCurrentSha() {
