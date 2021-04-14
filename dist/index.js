@@ -6248,19 +6248,21 @@ async function addCustomFieldItemToCard({ card, customFieldItem }) {
   if (alreadyHasEnvironmentSet) return
 
   const body = { idValue: customFieldItem.id }
+  log(`adding ${card.name}`)
   return await updateCustomField({ card, customFieldItem, body })
 }
 
 async function removeCustomFieldItemFromCard({ card, customFieldItem }) {
-  if (core.getInput("add_only") === "false") return
+  if (core.getInput("add_only") !== "false") return
 
   const customFieldItems = await getCardCustomItemFields(card)
-  const customFieldItemNotSetToCustomFieldItemValue = customFieldItems.none(
+  const customFieldItemSetToCustomFieldItemValue = customFieldItems.some(
     ({ idValue }) => idValue === customFieldItem.id,
   )
-  if (customFieldItemNotSetToCustomFieldItemValue) return
+  if (!customFieldItemSetToCustomFieldItemValue) return
 
   const body = { idValue: "", value: "" }
+  log(`removing ${card.name}`)
   return await updateCustomField({ card, customFieldItem, body })
 }
 
