@@ -69,3 +69,4 @@ Create 2 secrets, one for the key with the `Name` of `TRELLO_KEY` and one for th
 
 - Sync when branches are attached to a trello card.
 - Add support for squash merge detection
+- Add testing
