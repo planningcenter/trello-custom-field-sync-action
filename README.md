@@ -28,7 +28,7 @@ jobs:
   sync_trello: # you can change this
     runs-on: ubuntu-latest
     steps:
-      - uses: planningcenter/trello-custom-field-sync@v0.1.0
+      - uses: planningcenter/trello-custom-field-sync-action@v0.1.0
         with:
           trello_key: ${{ secrets.TRELLO_KEY }}
           trello_token: ${{ secrets.TRELLO_TOKEN }}
