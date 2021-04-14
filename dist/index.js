@@ -63,8 +63,8 @@ async function setCardToStagingIfOnStaging({ card, prs, customFieldItem }) {
   const attachments = card.attachments.filter(isPullRequestAttachment)
   if (
     attachments.some((attachment) => {
-      const prId = attachment.url.split("/").pop()
-      return prs.some((pr) => pr.number === parseInt(prId, 10))
+      const prId = parseInt(attachment.url.split("/").pop(), 10)
+      return prs.some((pr) => pr.number === prId)
     })
   ) {
     await updateCustomFieldToStaging({ card, customFieldItem: customFieldItem })
