@@ -58,6 +58,7 @@ async function setCardCustomFieldValue({ card, prs, customFieldItem }) {
   })
   const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
 
+  if (!attachmentIsAMatchedPR && core.getInput("add_only")) return
   return await updateCustomFieldToStaging({ card, customFieldItem, body })
 }
 

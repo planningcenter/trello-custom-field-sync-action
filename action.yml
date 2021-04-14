@@ -1,5 +1,5 @@
-name: 'Trello Staging Sync'
-description: 'Syncs the environment to staging when the branch attached to a card is deployed to staging'
+name: 'Trello Custom Field Sync'
+description: 'Syncs a custom field when the branch attached to a card is deployed to the branch pushed.'
 inputs:
   trello_key:
     description: 'key from Trello (https://trello.com/app-key)'
@@ -21,6 +21,10 @@ inputs:
     description: 'The value that you want to set the custom field to if it matches. NOTE: It must be a predefined value or it will break.'
     required: false
     default: 'Staging'
+  add_only:
+    description: 'If set to true, the sync will only add the custom field and will not remove it'
+    required: false
+    default: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
