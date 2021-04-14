@@ -33,13 +33,13 @@ async function run() {
 run();
 
 async function getCardsWithPRAttachments() {
-  const response = await trelloFetch(`boards/AY19B6gE/cards?attachments=true`)
+  const response = await trelloFetch(`boards/${core.getInput("trello_board_id")}/cards?attachments=true`)
   const cards = await response.json()
   return cards.filter(card => card.attachments.some(isPullRequestAttachment))
 }
 
 async function getEnvironmentCustomField() {
-  const response = await trelloFetch(`boards/AY19B6gE/customFields`)
+  const response = await trelloFetch(`boards/${core.getInput("trello_board_id")}/customFields`)
   const customFields = await response.json()
   return customFields.find(({ name}) => name === "Environment")
 }
