@@ -1,116 +1,71 @@
-# Create a JavaScript Action
+# Trello Custom Field Sync Github Action
 
-<p align="center">
-  <a href="https://github.com/actions/javascript-action/actions"><img alt="javscript-action status" src="https://github.com/actions/javascript-action/workflows/units-test/badge.svg"></a>
-</p>
+Trello Custom Field Sync Github Action helps to keep your Trello board up-to-date with what is happening on github.
 
-Use this template to bootstrap the creation of a JavaScript action.:rocket:
+## Prerequisites
 
-This template includes tests, linting, a validation workflow, publishing, and versioning guidance.
+- You must attach PRs to your trello cards to make this function correctly
+- You must have a custom field added to your cards
+- Github actions must be enabled for your github repository.
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+## Basic Usage
 
-## Create an action from this template
+In your repository, add a file to run a github action that looks something like this:
 
-Click the `Use this Template` and provide the new repo details for your action
+```yml
+# .github/workflows/trello.yml
 
-## Code in Main
+name: Trello Syncing (you can name this whatever you want to show in )
 
-Install the dependencies
+on:
+  push:
+    branches:
+      - staging # this can be a different branch.
+                # It is not recommended to use more than one branch here
+                # unless you use `add_only: true`
 
-```bash
-npm install
+jobs:
+  sync_trello: # you can change this
+    runs-on: ubuntu-latest
+    steps:
+      - uses: planningcenter/trello-custom-field-sync@v0.1.0
+        with:
+          trello_key: ${{ secrets.TRELLO_KEY }}
+          trello_token: ${{ secrets.TRELLO_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          trello_board_id: HI30B6yE # edit to your trello board id
 ```
 
-Run the tests :heavy_check_mark:
+## Additional Setup Options
 
-```bash
-$ npm test
+To use these, add them to the list of `with:` key/value pairs.
 
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-...
-```
+| key | default | description |
+|---| ---| ---|
+|__`trello_board_id`(required)__ | none | Id of the board to sync with. Can be found in the URL of the main board: (ex. `trello.com/b/{ID}/your-board-name`) |
+|__`trello_custom_field_name`__ | "Environment" | The name of the custom field that will be synced (not the value) |
+|__`trello_custom_field_value`__ | "Staging" | The value of the custom field that will be synced. This value must be added to the options for it to work correctly. |
+|__`add_only`__ | false | The syncing will remove the custom field value when the attached PR is no longer on the target branch.  Setting this value to try will make it so that the syncing will only add the tag and will not remove it. |
 
-## Change action.yml
+## Setting up secrets
 
-The action.yml defines the inputs and output for your action.
+In order to protect your trello key and token, you will need to add them in github to your secrets.
 
-Update the action.yml with your name, description, inputs and outputs for your action.
+GITHUB_TOKEN is added automatically by Github.
 
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
+### Generating Trello Key/Token
 
-## Change the Code
+Go to https://trello.com/app-key.  If you are logged in, you should see your key there.  To get a token, click on `Generate a Token` to get one.
 
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
+### Adding secrets to Github
 
-```javascript
-const core = require('@actions/core');
-...
+On Github, for the repository you are setting up, go to `Settings` -> `Secrets` -> `Actions`.
 
-async function run() {
-  try {
-      ...
-  }
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
+Click on `New repository secret`.
 
-run()
-```
+Create 2 secrets, one for the key with the `Name` of `TRELLO_KEY` and one for the token with the `Name` of `TRELLO_TOKEN`.
 
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
+## Roadmap
 
-## Package for distribution
-
-GitHub Actions will run the entry point from the action.yml. Packaging assembles the code into one file that can be checked in to Git, enabling fast and reliable execution and preventing the need to check in node_modules.
-
-Actions are run from GitHub repos.  Packaging the action will create a packaged action in the dist folder.
-
-Run prepare
-
-```bash
-npm run prepare
-```
-
-Since the packaged index.js is run from the dist folder.
-
-```bash
-git add dist
-```
-
-## Create a release branch
-
-Users shouldn't consume the action from master since that would be latest code and actions can break compatibility between major versions.
-
-Checkin to the v1 release branch
-
-```bash
-git checkout -b v1
-git commit -a -m "v1 release"
-```
-
-```bash
-git push origin v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket:
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Usage
-
-You can now consume the action by referencing the v1 branch
-
-```yaml
-uses: actions/javascript-action@v1
-with:
-  milliseconds: 1000
-```
-
-See the [actions tab](https://github.com/actions/javascript-action/actions) for runs of this action! :rocket:
+- Sync when branches are attached to a trello card.
+- Add support for squash merge detection
