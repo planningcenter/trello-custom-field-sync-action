@@ -49,19 +49,34 @@ async function setCardCustomFieldValue({ card, commits, customFieldItem }) {
   const headCommitSha = await getHeadCommitShaForPR(prId)
   const attachmentIsAMatchedPR = commits.some((commit) => commit.sha === headCommitSha)
 
-  if (!attachmentIsAMatchedPR && core.getInput("add_only") !== "false") return
+  if (attachmentIsAMatchedPR) {
+    return await addCustomFieldItemToCard({ card, customFieldItem })
+  } else {
+    return await removeCustomFieldItemFromCard({ card, customFieldItem })
+  }
+}
 
+async function addCustomFieldItemToCard({ card, customFieldItem }) {
   const customFieldItems = await getCardCustomItemFields(card)
-  const alreadyHasEnvironmentSet = customFieldItems.some(({ idCustomField, idValue }) => {
-    return (
-      customFieldItem.idCustomField === idCustomField &&
-      (attachmentIsAMatchedPR || idValue !== customFieldItem.id)
-    )
-  })
+  const alreadyHasEnvironmentSet = customFieldItems.some(
+    ({ idCustomField }) => customFieldItem.idCustomField === idCustomField,
+  )
   if (alreadyHasEnvironmentSet) return
 
-  log(`syncing card: ${card.name}; ${attachmentIsAMatchedPR ? "adding" : "removing"}`)
-  const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
+  const body = { idValue: customFieldItem.id }
+  return await updateCustomField({ card, customFieldItem, body })
+}
+
+async function removeCustomFieldItemFromCard({ card, customFieldItem }) {
+  if (core.getInput("add_only") === "false") return
+
+  const customFieldItems = await getCardCustomItemFields(card)
+  const customFieldItemNotSetToCustomFieldItemValue = customFieldItems.none(
+    ({ idValue }) => idValue === customFieldItem.id,
+  )
+  if (customFieldItemNotSetToCustomFieldItemValue) return
+
+  const body = { idValue: "", value: "" }
   return await updateCustomField({ card, customFieldItem, body })
 }
 

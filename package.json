@@ -1,6 +1,6 @@
 {
   "name": "trello-sync-staging",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A github action to sync PRs/branches on staging to have the custom field on Trello",
   "main": "index.js",
   "scripts": {
