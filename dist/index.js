@@ -13,7 +13,6 @@ async function run() {
   try {
     const stagingCustomFieldItem = await getStagingCustomFieldItem()
     const filteredCards = await getCardsWithPRAttachments()
-    // core.info(JSON.stringify(filteredCards, undefined, 2))
     const { data: pullRequestsOnCurrentSha } = await getPullRequestsWithCurrentSha()
 
     filteredCards.forEach(async (card) => {
@@ -22,12 +21,9 @@ async function run() {
         const prId = attachment.url.split("/").pop()
         return pullRequestsOnCurrentSha.some(pr => pr.number === parseInt(prId, 10))
       })) {
-        const result = await updateCustomFieldToStaging({ card, customFieldItem: stagingCustomFieldItem })
-        const json = await result.text()
-        core.info(json)
+        await updateCustomFieldToStaging({ card, customFieldItem: stagingCustomFieldItem })
       }
     })
-    // core.info(JSON.stringify(result, undefined, 2))
     core.setOutput('time', filteredCards);
   } catch (error) {
     core.setFailed(error.message);
@@ -53,10 +49,10 @@ async function getStagingCustomFieldItem() {
   return customField.options.find(option => option.value.text === "Staging")
 }
 
-async function updateCustomFieldToStaging({ card, customFieldItem }) {
-  core.info(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldItem.idCustomField}`)
-  core.info(JSON.stringify({ method: "PUT", body: JSON.stringify({ idValue: customFieldItem.id }) }))
-  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldItem.idCustomField}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: `{ "idValue": "${customFieldItem.id}" }` })
+async function updateCustomFieldToStaging({ card, customFieldItem,  }) {
+  return await fetch(
+    `https://api.trello.com/1/cards/${card.id}/customField/${customFieldItem.idCustomField}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`,
+    { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idValue: customFieldItem.id}) })
 }
 
 async function getPullRequestsWithCurrentSha() {
