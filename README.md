@@ -1,6 +1,6 @@
 # Trello Custom Field Sync Github Action
 
-Trello Custom Field Sync Github Action helps to keep your Trello board up-to-date with what is happening on github.
+Trello Custom Field Sync Github Action helps to keep your Trello board up-to-date with what is happening on github.  Syncing will add (and remove unless settings tell otherwise) a custom field if there is not already one set.
 
 ## Prerequisites
 
@@ -70,3 +70,4 @@ Create 2 secrets, one for the key with the `Name` of `TRELLO_KEY` and one for th
 - Sync when branches are attached to a trello card.
 - Add support for squash merge detection
 - Add testing
+- Add support for a flag that allows you to overwrite item for more scenarios
