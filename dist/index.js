@@ -6232,19 +6232,20 @@ async function setCardCustomFieldValue({ card, commits, customFieldItem }) {
   const prId = attachment.url.split("/").pop()
   const headCommitSha = await getHeadCommitShaForPR(prId)
   const attachmentIsAMatchedPR = commits.some((commit) => commit.sha === headCommitSha)
-  const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
 
-  if (!attachmentIsAMatchedPR && core.getInput("add_only")) return
+  if (!attachmentIsAMatchedPR && core.getInput("add_only") !== "false") return
 
   const customFieldItems = await getCardCustomItemFields(card)
-  const alreadyHasEnvironmentSet = customFieldItems.some(
-    ({ idCustomField }) => customFieldItem.idCustomField === idCustomField,
-  )
-  if (alreadyHasEnvironmentSet) {
-    log(`syncing card: ${card.name}; already set`)
-    return
-  }
+  const alreadyHasEnvironmentSet = customFieldItems.some(({ idCustomField, idValue }) => {
+    return (
+      customFieldItem.idCustomField === idCustomField &&
+      (attachmentIsAMatchedPR || idValue !== customFieldItem.id)
+    )
+  })
+  if (alreadyHasEnvironmentSet) return
+
   log(`syncing card: ${card.name}; ${attachmentIsAMatchedPR ? "adding" : "removing"}`)
+  const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
   return await updateCustomField({ card, customFieldItem, body })
 }
 
