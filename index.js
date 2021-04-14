@@ -47,7 +47,9 @@ async function getStagingCustomFieldItem() {
 }
 
 async function updateCustomFieldToStaging({ card, customFieldItem }) {
-  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldItem.idCustomField}/item`, { method: "PUT", body: JSON.stringify({ idValue: customFieldItem.id, key: core.getInput("trello_key"), token: core.getInput("trello_token") }) })
+  core.info(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldItem.idCustomField}`)
+  core.info(JSON.stringify({ method: "PUT", body: JSON.stringify({ idValue: customFieldItem.id }) }))
+  return await fetch(`https://api.trello.com/1/cards/${card.id}/customField/${customFieldItem.idCustomField}/item?key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: `{ "idValue": "${customFieldItem.id}" }` })
 }
 
 async function getPullRequestsWithCurrentSha() {
