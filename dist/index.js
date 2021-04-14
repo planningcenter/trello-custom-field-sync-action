@@ -61,23 +61,24 @@ async function getStagingCustomFieldItem() {
 
 async function setCardToStagingIfOnStaging({ card, prs, customFieldItem }) {
   const attachments = card.attachments.filter(isPullRequestAttachment)
-  if (
-    attachments.some((attachment) => {
-      const prId = parseInt(attachment.url.split("/").pop(), 10)
-      return prs.some((pr) => pr.number === prId)
-    })
-  ) {
-    await updateCustomFieldToStaging({ card, customFieldItem: customFieldItem })
-  }
+  const attachmentIsAMatchedPR = attachments.some((attachment) => {
+    const prId = parseInt(attachment.url.split("/").pop(), 10)
+    return prs.some((pr) => pr.number === prId)
+  })
+  const body = attachmentIsAMatchedPR
+    ? { idValue: customFieldItem.id }
+    : { idValue: "", value: "" }
+
+  return await updateCustomFieldToStaging({ card, customFieldItem, body })
 }
 
-async function updateCustomFieldToStaging({ card, customFieldItem }) {
+async function updateCustomFieldToStaging({ card, customFieldItem, body }) {
   return await trelloFetch(
     `cards/${card.id}/customField/${customFieldItem.idCustomField}/item`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idValue: customFieldItem.id }),
+      body: JSON.stringify(body),
     },
   )
 }
@@ -94,24 +95,6 @@ async function getPullRequestsWithCurrentSha() {
     commit_sha: currentSha,
   })
 }
-
-// async function getCommitsOnCurrentSha() {
-//   const owner = github.context.payload.repository.owner.name
-//   const repo = github.context.payload.repository.name
-//   const currentSha = github.context.sha
-//   const githubToken = core.getInput("github_token")
-//   const octokit = github.getOctokit(githubToken)
-//   return await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
-// }
-
-// async function getPullRequestForId(id) {
-//   const owner = github.context.payload.repository.owner.name
-//   const repo = github.context.payload.repository.name
-//   const currentSha = github.context.sha
-//   const githubToken = core.getInput("github_token")
-//   const octokit = github.getOctokit(githubToken)
-//   return await octokit.rest.repos.listCommits({ owner, repo, sha: currentSha })
-// }
 
 function isPullRequestAttachment(attachment) {
   const owner = github.context.payload.repository.owner.name
