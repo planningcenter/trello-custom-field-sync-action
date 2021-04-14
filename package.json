@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kylemellander/javascript-action.git"
+    "url": "git+https://github.com/planningcenter/trello-custom-field-sync-action.git"
   },
   "keywords": [
     "GitHub",
