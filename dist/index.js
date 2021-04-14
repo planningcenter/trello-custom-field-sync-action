@@ -6114,16 +6114,13 @@ const { trelloFetch } = __nccwpck_require__(447)
 async function run() {
   try {
     const commits = await findCommitsFromShaToMaster()
-    log("commits from sha to master: " + commits.length.toString())
-    log(commits)
     const stagingCustomFieldItem = await getStagingCustomFieldItem()
     const filteredCards = await getCardsWithPRAttachments()
-    const { data: pullRequestsOnCurrentSha } = await getPullRequestsWithCurrentSha()
-
+    log(filteredCards[0])
     filteredCards.forEach(async (card) => {
       setCardCustomFieldValue({
         card,
-        prs: pullRequestsOnCurrentSha,
+        commits,
         customFieldItem: stagingCustomFieldItem,
       })
     })
@@ -6156,16 +6153,16 @@ async function getStagingCustomFieldItem() {
   )
 }
 
-async function setCardCustomFieldValue({ card, prs, customFieldItem }) {
+async function setCardCustomFieldValue({ card, commits, customFieldItem }) {
   const attachments = card.attachments.filter(isPullRequestAttachment)
-  const attachmentIsAMatchedPR = attachments.some((attachment) => {
-    const prId = parseInt(attachment.url.split("/").pop(), 10)
-    return prs.some((pr) => pr.number === prId)
-  })
+  const attachment = attachments[0] // TODO: support multiple PR attachments
+  const prId = attachment.url.split("/").pop()
+  const headCommitSha = await getHeadCommitForPR(prId)
+  const attachmentIsAMatchedPR = commits.some((commit) => commit.sha === headCommitSha)
   const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
 
   if (!attachmentIsAMatchedPR && core.getInput("add_only")) return
-  core.info("syncing card" + JSON.stringify(card, undefined, 2))
+  core.info(`syncing card: ${card.name} \n${attachmentIsAMatchedPR ? "adding" : "removing"}`)
   return await updateCustomFieldToStaging({ card, customFieldItem, body })
 }
 
@@ -6184,24 +6181,14 @@ async function findCommitsFromShaToMaster() {
   const basehead = `master...${currentSha}`
   const {
     data: { commits, total_commits },
-  } = await getOctokit().request(`GET /repos/${owner}/${repo}/compare/${basehead}`, {
-    owner,
-    repo,
-    basehead,
-  })
+  } = await getOctokit().request(`GET /repos/${owner}/${repo}/compare/${basehead}`)
   let allCommits = commits
-  log(total_commits)
   const extraPagesCount = Math.min(Math.floor(total_commits / 250), 5) // let's cap at 1500 commits
   for (let index = 0; index < extraPagesCount; index++) {
     const page = index + 2 // we already loaded page 1
     const {
       data: { commits: pageCommits },
-    } = await getOctokit().request(`GET /repos/${owner}/${repo}/compare/${basehead}`, {
-      owner,
-      repo,
-      basehead,
-      page,
-    })
+    } = await getOctokit().request(`GET /repos/${owner}/${repo}/compare/${basehead}`, { page })
 
     allCommits = [...allCommits, ...pageCommits]
   }
@@ -6209,15 +6196,26 @@ async function findCommitsFromShaToMaster() {
   return allCommits
 }
 
-async function getPullRequestsWithCurrentSha() {
+// async function getPullRequestsWithCurrentSha() {
+//   const owner = github.context.payload.repository.owner.name
+//   const repo = github.context.payload.repository.name
+//   const currentSha = github.context.sha
+//   return await getOctokit().rest.repos.listPullRequestsAssociatedWithCommit({
+//     owner,
+//     repo,
+//     commit_sha: currentSha,
+//   })
+// }
+
+async function getHeadCommitForPR(id) {
   const owner = github.context.payload.repository.owner.name
   const repo = github.context.payload.repository.name
-  const currentSha = github.context.sha
-  return await getOctokit().rest.repos.listPullRequestsAssociatedWithCommit({
-    owner,
-    repo,
-    commit_sha: currentSha,
-  })
+  const {
+    data: {
+      head: { sha },
+    },
+  } = await getOctokit().request(`GET /repos/${owner}/${repo}/pulls/${id}`)
+  return sha
 }
 
 function getOctokit() {
