@@ -6116,6 +6116,7 @@ async function run() {
     const stagingCustomFieldItem = await getStagingCustomFieldItem()
     const filteredCards = await getCardsWithPRAttachments()
     const { data: pullRequestsOnCurrentSha } = await getPullRequestsWithCurrentSha()
+    core.info(JSON.stringify(pullRequestsOnCurrentSha, undefined, 2))
 
     filteredCards.forEach(async (card) => {
       setCardCustomFieldValue({
@@ -6161,6 +6162,7 @@ async function setCardCustomFieldValue({ card, prs, customFieldItem }) {
   const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
 
   if (!attachmentIsAMatchedPR && core.getInput("add_only")) return
+  core.info("syncing card" + JSON.stringify(card, undefined, 2))
   return await updateCustomFieldToStaging({ card, customFieldItem, body })
 }
 
