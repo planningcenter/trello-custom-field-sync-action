@@ -38,12 +38,18 @@ async function getEnvironmentCustomField() {
     `boards/${core.getInput("trello_board_id")}/customFields`,
   )
   const customFields = await response.json()
-  return customFields.find(({ name }) => name === "Environment")
+  return customFields.find(
+    ({ name }) => name === core.getInput("trello_custom_field_name"),
+  )
 }
 
 async function getStagingCustomFieldItem() {
   const customField = await getEnvironmentCustomField()
-  return customField.options.find((option) => option.value.text === "Staging")
+  return customField.options.find(
+    (option) =>
+      Object.values(option.value)[0] ===
+      core.getInput("trello_custom_field_value"),
+  )
 }
 
 async function setCardToStagingIfOnStaging({ card, prs, customFieldItem }) {
