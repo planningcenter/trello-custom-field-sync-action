@@ -1,6 +1,6 @@
 const core = require('@actions/core');
 const github = require("@actions/github");
-const fetch = require('node-fetch');
+const { trelloFetch } = require('./trelloUtils');
 
 async function run() {
   try {
@@ -9,13 +9,7 @@ async function run() {
     const { data: pullRequestsOnCurrentSha } = await getPullRequestsWithCurrentSha()
 
     filteredCards.forEach(async (card) => {
-      const attachments = card.attachments.filter(isPullRequestAttachment)
-      if (attachments.some(attachment => {
-        const prId = attachment.url.split("/").pop()
-        return pullRequestsOnCurrentSha.some(pr => pr.number === parseInt(prId, 10))
-      })) {
-        await updateCustomFieldToStaging({ card, customFieldItem: stagingCustomFieldItem })
-      }
+      setCardToStagingIfOnStaging({ card, prs: pullRequestsOnCurrentSha, customFieldItem: stagingCustomFieldItem })
     })
     core.setOutput('time', filteredCards);
   } catch (error) {
@@ -40,6 +34,16 @@ async function getEnvironmentCustomField() {
 async function getStagingCustomFieldItem() {
   const customField = await getEnvironmentCustomField()
   return customField.options.find(option => option.value.text === "Staging")
+}
+
+async function setCardToStagingIfOnStaging({card, prs, customFieldItem }) {
+  const attachments = card.attachments.filter(isPullRequestAttachment)
+  if (attachments.some(attachment => {
+    const prId = attachment.url.split("/").pop()
+    return prs.some(pr => pr.number === parseInt(prId, 10))
+  })) {
+    await updateCustomFieldToStaging({ card, customFieldItem: customFieldItem })
+  }
 }
 
 async function updateCustomFieldToStaging({ card, customFieldItem,  }) {
@@ -80,12 +84,4 @@ function isPullRequestAttachment(attachment) {
   const owner = github.context.payload.repository.owner.name
   const repo = github.context.payload.repository.name
   return attachment.url.includes(`github.com/${owner}/${repo}/pull`)
-}
-
-async function trelloFetch(path, options = {}) {
-  const hasQuery = path.includes("?")
-  const authQueryParamsConnector = hasQuery ? "&" : "?"
-  const authQueryParams = `key=${core.getInput("trello_key")}&token=${core.getInput("trello_token")}`
-  const url = `https://api.trello.com/1/${path}${authQueryParamsConnector}${authQueryParams}`
-  return await fetch(url, options)
 }
