@@ -1,6 +1,43 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 130:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+const core = __nccwpck_require__(186)
+const github = __nccwpck_require__(438)
+
+exports.getHeadCommitShaForPR = async function getHeadCommitShaForPR(id) {
+  const owner = github.context.payload.repository.owner.name
+  const repo = github.context.payload.repository.name
+  const {
+    data: {
+      head: { sha },
+    },
+  } = await getOctokit().request(`GET /repos/${owner}/${repo}/pulls/${id}`)
+  return sha
+}
+
+exports.getCommitsFromMaster = async function (options = {}) {
+  const owner = github.context.payload.repository.owner.name
+  const repo = github.context.payload.repository.name
+  const currentSha = github.context.sha
+  const basehead = `master...${currentSha}`
+  const { data } = await getOctokit().request(
+    `GET /repos/${owner}/${repo}/compare/${basehead}`,
+    options,
+  )
+  return data
+}
+
+function getOctokit() {
+  const githubToken = core.getInput("github_token")
+  return github.getOctokit(githubToken)
+}
+
+
+/***/ }),
+
 /***/ 351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -5937,20 +5974,58 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 447:
+/***/ 564:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 const core = __nccwpck_require__(186)
 const fetch = __nccwpck_require__(467)
 
-exports.trelloFetch = async function trelloFetch(path, options = {}) {
+exports.getCards = async function getCards() {
+  return await trelloFetch(`boards/${core.getInput("trello_board_id")}/cards?attachments=true`)
+}
+
+exports.getCustomField = async function getCustomField() {
+  const customFields = await trelloFetch(`boards/${core.getInput("trello_board_id")}/customFields`)
+  return customFields.find(({ name }) => name === core.getInput("trello_custom_field_name"))
+}
+
+exports.getCardCustomItemFields = async function getCardCustomItemFields(card) {
+  return await trelloFetch(`cards/${card.id}/customFieldItems`)
+}
+
+exports.updateCustomField = async function updateCustomField({ card, customFieldItem, body }) {
+  return await trelloFetch(`cards/${card.id}/customField/${customFieldItem.idCustomField}/item`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+}
+
+async function trelloFetch(path, options = {}) {
   const hasQuery = path.includes("?")
   const authQueryParamsConnector = hasQuery ? "&" : "?"
-  const authQueryParams = `key=${core.getInput(
-    "trello_key",
-  )}&token=${core.getInput("trello_token")}`
+  const authQueryParams = `key=${core.getInput("trello_key")}&token=${core.getInput(
+    "trello_token",
+  )}`
   const url = `https://api.trello.com/1/${path}${authQueryParamsConnector}${authQueryParams}`
-  return await fetch(url, options)
+  const response = await fetch(url, options)
+  return response.json()
+}
+
+
+/***/ }),
+
+/***/ 454:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+const core = __nccwpck_require__(186)
+
+exports.log = function log(toLog) {
+  if (typeof toLog === "object") {
+    core.info(JSON.stringify(toLog, undefined, 2))
+  } else {
+    core.info(toLog)
+  }
 }
 
 
@@ -6109,14 +6184,22 @@ var __webpack_exports__ = {};
 (() => {
 const core = __nccwpck_require__(186)
 const github = __nccwpck_require__(438)
-const { trelloFetch } = __nccwpck_require__(447)
+const {
+  getCards,
+  getCustomField,
+  getCardCustomItemFields,
+  updateCustomField,
+} = __nccwpck_require__(564)
+const { getHeadCommitShaForPR, getCommitsFromMaster } = __nccwpck_require__(130)
+const { log } = __nccwpck_require__(454)
 
 async function run() {
   try {
     const commits = await findCommitsFromShaToMaster()
     const stagingCustomFieldItem = await getStagingCustomFieldItem()
-    const filteredCards = await getCardsWithPRAttachments()
-    filteredCards.forEach(async (card) => {
+    const cardsWithPRAttached = await getCardsWithPRAttached()
+
+    cardsWithPRAttached.forEach(async (card) => {
       setCardCustomFieldValue({
         card,
         commits,
@@ -6124,29 +6207,20 @@ async function run() {
       })
     })
   } catch (error) {
-    log("FAILED: " + error.message)
+    log(error)
     core.setFailed(error.message)
   }
 }
 
 run()
 
-async function getCardsWithPRAttachments() {
-  const response = await trelloFetch(
-    `boards/${core.getInput("trello_board_id")}/cards?attachments=true`,
-  )
-  const cards = await response.json()
+async function getCardsWithPRAttached() {
+  const cards = await getCards()
   return cards.filter((card) => card.attachments.some(isPullRequestAttachment))
 }
 
-async function getEnvironmentCustomField() {
-  const response = await trelloFetch(`boards/${core.getInput("trello_board_id")}/customFields`)
-  const customFields = await response.json()
-  return customFields.find(({ name }) => name === core.getInput("trello_custom_field_name"))
-}
-
 async function getStagingCustomFieldItem() {
-  const customField = await getEnvironmentCustomField()
+  const customField = await getCustomField()
   return customField.options.find(
     (option) => Object.values(option.value)[0] === core.getInput("trello_custom_field_value"),
   )
@@ -6156,95 +6230,42 @@ async function setCardCustomFieldValue({ card, commits, customFieldItem }) {
   const attachments = card.attachments.filter(isPullRequestAttachment)
   const attachment = attachments[0] // TODO: support multiple PR attachments
   const prId = attachment.url.split("/").pop()
-  const headCommitSha = await getHeadCommitForPR(prId)
+  const headCommitSha = await getHeadCommitShaForPR(prId)
   const attachmentIsAMatchedPR = commits.some((commit) => commit.sha === headCommitSha)
   const body = attachmentIsAMatchedPR ? { idValue: customFieldItem.id } : { idValue: "", value: "" }
 
   if (!attachmentIsAMatchedPR && core.getInput("add_only")) return
-  log(`syncing card: ${card.name}`)
 
-  const customFieldItemsResponse = await trelloFetch(`cards/${card.id}/customFieldItems`)
-  const customFieldItems = await customFieldItemsResponse.json()
+  const customFieldItems = await getCardCustomItemFields(card)
   const alreadyHasEnvironmentSet = customFieldItems.some(
     ({ idCustomField }) => customFieldItem.idCustomField === idCustomField,
   )
   if (alreadyHasEnvironmentSet) {
-    log("already set")
+    log(`syncing card: ${card.name}; already set`)
     return
   }
-  log(attachmentIsAMatchedPR ? "adding" : "removing")
-  return await updateCustomFieldToStaging({ card, customFieldItem, body })
+  log(`syncing card: ${card.name}; ${attachmentIsAMatchedPR ? "adding" : "removing"}`)
+  return await updateCustomField({ card, customFieldItem, body })
 }
 
-async function updateCustomFieldToStaging({ card, customFieldItem, body }) {
-  return await trelloFetch(`cards/${card.id}/customField/${customFieldItem.idCustomField}/item`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
-}
-
+// we only get 250 per page so we will iterate over pages to grab more if there is more
 async function findCommitsFromShaToMaster() {
-  const owner = github.context.payload.repository.owner.name
-  const repo = github.context.payload.repository.name
-  const currentSha = github.context.sha
-  const basehead = `master...${currentSha}`
-  const {
-    data: { commits, total_commits },
-  } = await getOctokit().request(`GET /repos/${owner}/${repo}/compare/${basehead}`)
+  const { commits, total_commits } = await getCommitsFromMaster()
   let allCommits = commits
   const extraPagesCount = Math.min(Math.floor(total_commits / 250), 5) // let's cap at 1500 commits
   for (let index = 0; index < extraPagesCount; index++) {
     const page = index + 2 // we already loaded page 1
-    const {
-      data: { commits: pageCommits },
-    } = await getOctokit().request(`GET /repos/${owner}/${repo}/compare/${basehead}`, { page })
-
+    const { commits: pageCommits } = await getCommitsFromMaster({ page })
     allCommits = [...allCommits, ...pageCommits]
   }
 
   return allCommits
 }
 
-// async function getPullRequestsWithCurrentSha() {
-//   const owner = github.context.payload.repository.owner.name
-//   const repo = github.context.payload.repository.name
-//   const currentSha = github.context.sha
-//   return await getOctokit().rest.repos.listPullRequestsAssociatedWithCommit({
-//     owner,
-//     repo,
-//     commit_sha: currentSha,
-//   })
-// }
-
-async function getHeadCommitForPR(id) {
-  const owner = github.context.payload.repository.owner.name
-  const repo = github.context.payload.repository.name
-  const {
-    data: {
-      head: { sha },
-    },
-  } = await getOctokit().request(`GET /repos/${owner}/${repo}/pulls/${id}`)
-  return sha
-}
-
-function getOctokit() {
-  const githubToken = core.getInput("github_token")
-  return github.getOctokit(githubToken)
-}
-
 function isPullRequestAttachment(attachment) {
   const owner = github.context.payload.repository.owner.name
   const repo = github.context.payload.repository.name
   return attachment.url.includes(`github.com/${owner}/${repo}/pull`)
-}
-
-function log(toLog) {
-  if (typeof toLog === "object") {
-    core.info(JSON.stringify(toLog, undefined, 2))
-  } else {
-    core.info(toLog)
-  }
 }
 
 })();
