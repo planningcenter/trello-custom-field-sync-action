@@ -2,8 +2,8 @@ const core = require("@actions/core")
 const github = require("@actions/github")
 
 exports.getHeadCommitShaForPR = async function getHeadCommitShaForPR(id) {
-  const owner = github.context.payload.repository.owner.name
-  const repo = github.context.payload.repository.name
+  const owner = github.context.repo.owner
+  const repo = github.context.repo.repo
   const {
     data: {
       head: { sha },
@@ -13,8 +13,8 @@ exports.getHeadCommitShaForPR = async function getHeadCommitShaForPR(id) {
 }
 
 exports.getCommitsFromMaster = async function (options = {}) {
-  const owner = github.context.payload.repository.owner.name
-  const repo = github.context.payload.repository.name
+  const owner = github.context.repo.owner
+  const repo = github.context.repo.repo
   const currentSha = github.context.sha
   const basehead = `master...${currentSha}`
   const { data } = await getOctokit().request(

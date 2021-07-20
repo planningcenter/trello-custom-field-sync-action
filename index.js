@@ -97,7 +97,7 @@ async function findCommitsFromShaToMaster() {
 }
 
 function isPullRequestAttachment(attachment) {
-  const owner = github.context.payload.repository.owner.name
-  const repo = github.context.payload.repository.name
+  const owner = github.context.repo.owner
+  const repo = github.context.repo.repo
   return attachment.url.includes(`github.com/${owner}/${repo}/pull`)
 }
