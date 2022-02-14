@@ -26,7 +26,7 @@
     "node-fetch": "^3.1.0"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.33.0",
+    "@vercel/ncc": "^0.33.3",
     "eslint": "^8.4.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
